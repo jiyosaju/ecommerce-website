@@ -369,59 +369,39 @@ exports.getCart = async (res, req) => {
 
 exports.fetchCart = async (req, res) => {
   try {
-    // Assuming Userdb is correctly defined/imported
-
     // Validate session ID
     const userId = req.body.id;
-    console.log("userId=", userId);
     if (!userId) {
-      res.status(400).json({ error: "Invalid session ID" });
-      return;
+      return res.status(400).json({ error: "Invalid session ID" });
     }
 
-   
-   
-    // if (!user) {
-    //   res.status(404).json({ error: "User not found" });
-    //   return;
-    // }
-
-    // const productid=user.cart.map(item=>item.product)
-
-    // const products = await productDatas.find({ _id: { $in: productid } });
-    
+    // Find the user by userId
     const user = await Userdb.findById(userId);
-    const productid = user.cart.map((item) => item.product);
-    const products = await productDatas.find({ _id: { $in: productid } });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    console.log("products=", products);
-    console.log("user=", user);
+    // Extract product ids from user's cart
+    const productIds = user.cart.map(item => item.product);
 
-
+    // Find products based on productIds
+    const products = await productDatas.find({ _id: { $in: productIds } });
 
     // Create a new array combining product details with quantities from the user's cart
-    const combinedArray = user.cart.map((cartItem) => {
-
-      const productDetails = products.find((product) => product._id == cartItem.product);
-
-      // const productDetails = products;
-      
-
+    const combinedArray = user.cart.map(cartItem => {
+      const productDetails = products.find(product => product._id.equals(cartItem.product));
       return {
         product: productDetails,
         quantity: cartItem.quantity,
       };
     });
 
-    console.log("Combined Array:", combinedArray);
-
     res.json({ combinedArray });
   } catch (error) {
-    console.error(error); // Log the error
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 
 
